@@ -6,4 +6,4 @@ class Settings:
         # Screen settings
         self.screen_width = 1200
         self.screen_height = 800
-        self.bg_color = (105, 105, 105) # Dim gray color
+        self.bg_color = (211, 211, 211)  # Light gray color
