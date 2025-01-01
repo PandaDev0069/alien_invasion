@@ -14,3 +14,6 @@ class Settings:
         # Bullet settings
         self.bullet_speed = 5.0
         self.bullets_allowed = 5
+
+        # Alien settings
+        self.alien_speed = 1.0
