@@ -7,6 +7,7 @@ from settings import Settings
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
+from explosion import Explosion
 
 class AlienInvasion:
     """Overall class to manage game assets and behaviour."""
@@ -24,8 +25,14 @@ class AlienInvasion:
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
+        self.explosions = pygame.sprite.Group()
 
         self._create_fleet()
+
+        # Load and play background music
+        pygame.mixer.music.load('sounds/background_music.mp3')
+        pygame.mixer.music.set_volume(0.5)  # Set background music volume to 50%
+        pygame.mixer.music.play(-1)  # -1 means the music will loop indefinitely
 
 
     def run_game(self):
@@ -35,6 +42,7 @@ class AlienInvasion:
             self.ship.update()
             self._update_bullets()
             self._update_aliens()
+            self._update_explosions()
             self._update_screen()
             self.clock.tick(60)
 
@@ -88,6 +96,27 @@ class AlienInvasion:
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
         
+        # Check for any bullets that have hit aliens.
+        # If so, get rid of the bullet and the alien, and show an explosion.
+        collisions = pygame.sprite.groupcollide(
+            self.bullets, self.aliens, True, True)
+
+        if collisions:
+            for aliens in collisions.values():
+                for alien in aliens:
+                    self._show_explosion(alien)
+
+
+    def _show_explosion(self, alien):
+        """Show an explosion at the alien's position."""
+        explosion = Explosion(self, alien.rect.center)
+        self.explosions.add(explosion)
+
+
+    def _update_explosions(self):
+        """Update the position of explosions."""
+        self.explosions.update()
+
 
     def _update_screen(self):
         """Update images on screen, and flip to the new screen."""
@@ -96,6 +125,8 @@ class AlienInvasion:
             bullet.draw_bullet()
         self.ship.blitme()
         self.aliens.draw(self.screen)
+        for explosion in self.explosions.sprites():
+            explosion.draw()
 
         pygame.display.flip()
     
