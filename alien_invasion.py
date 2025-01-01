@@ -1,9 +1,11 @@
 import sys
+from time import sleep
 
 import pygame
 
 from random import randint, uniform
 from settings import Settings
+from game_stats import GameStats
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
@@ -22,6 +24,9 @@ class AlienInvasion:
             self.settings.screen_width, self.settings.screen_height), pygame.DOUBLEBUF)
         pygame.display.set_caption("Alien Invasion")
 
+        # Create an instance to store game statistics.
+        self.stats = GameStats(self)
+
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
@@ -34,15 +39,29 @@ class AlienInvasion:
         pygame.mixer.music.set_volume(0.5)  # Set background music volume to 50%
         pygame.mixer.music.play(-1)  # -1 means the music will loop indefinitely
 
+        # Load explosion sound
+        self.explosion_sound = pygame.mixer.Sound('sounds/explosion.wav')
+
+        # Load explosion sprite sheet
+        self.explosion_sheet = pygame.image.load('images/explosion_sheet.png')
+
+        # Extract explosion frames from the sprite sheet
+        self.explosion_frames = self._get_explosion_frames()
+
+        # Start Alien Invasion in an active state.
+        self.game_active = True
 
     def run_game(self):
         """Start the main loop for the game."""
         while True:
             self._check_events()
-            self.ship.update()
-            self._update_bullets()
-            self._update_aliens()
-            self._update_explosions()
+
+            if self.game_active:
+                self.ship.update()
+                self._update_bullets()
+                self._update_aliens()
+                self._update_explosions()
+
             self._update_screen()
             self.clock.tick(60)
 
@@ -61,21 +80,21 @@ class AlienInvasion:
 
     def _check_keydown_events(self, event):
         """Respond to key presses."""
-        if event.key == pygame.K_RIGHT:
+        if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
             self.ship.moving_right = True
-        elif event.key == pygame.K_LEFT:
+        elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
             self.ship.moving_left = True
         elif event.key == pygame.K_q:
             sys.exit()
-        elif event.key == pygame.K_SPACE:
+        elif event.key == pygame.K_SPACE or event.key == pygame.K_UP:
             self._fire_bullet()
 
 
     def _check_keyup_events(self, event):
         """Respond to key releases."""
-        if event.key == pygame.K_RIGHT:
+        if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
             self.ship.moving_right = False
-        elif event.key == pygame.K_LEFT:
+        elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
             self.ship.moving_left = False
 
 
@@ -96,8 +115,11 @@ class AlienInvasion:
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
         
-        # Check for any bullets that have hit aliens.
-        # If so, get rid of the bullet and the alien, and show an explosion.
+        self._check_bullet_alien_collisions()
+
+    def _check_bullet_alien_collisions(self):
+        """Respond to bullet-alien collisons."""
+        # Remove any bullets and aliens that have collided.
         collisions = pygame.sprite.groupcollide(
             self.bullets, self.aliens, True, True)
 
@@ -105,6 +127,11 @@ class AlienInvasion:
             for aliens in collisions.values():
                 for alien in aliens:
                     self._show_explosion(alien)
+        
+        if not self.aliens:
+            # Destroy existing bullets and create new fleet.
+            self.bullets.empty()
+            self._create_fleet()
 
 
     def _show_explosion(self, alien):
@@ -164,6 +191,12 @@ class AlienInvasion:
         self._check_fleet_edges()
         self.aliens.update()
 
+        # Look for alien-ship collisions.
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            self._ship_hit()
+        
+        # Look for aliens hitting the bottom of the screen.
+        self._check_aliens_bottom()
 
     def _check_fleet_edges(self):
         """Respond appropriately if any aliens have reached an edge."""
@@ -180,6 +213,57 @@ class AlienInvasion:
         self.settings.fleet_direction *= -1
                     
 
+    def _ship_hit(self):
+        """Respond to the ship being hit by an alien."""
+        # Play explosion sound
+        self.explosion_sound.play()
+
+        # Display explosion animation
+        for frame in self.explosion_frames:
+            self.screen.blit(frame, self.ship.rect)
+            pygame.display.flip()
+            pygame.time.delay(100)
+
+        # Decrement ships_left.
+        if self.stats.ships_left > 0:
+            self.stats.ships_left -= 1
+
+            # Get rid of any remaining aliens and bullets.
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # Create a new fleet and center the ship.
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # Pause.
+            sleep(0.5)
+        else:
+            self.game_active = False
+            pygame.mouse.set_visible(True)
+
+    def _get_explosion_frames(self):
+        """Extract frames from the explosion sprite sheet."""
+        frames = []
+        sheet_width, sheet_height = self.explosion_sheet.get_size()
+        frame_width = sheet_width // 5  # Assuming 5 frames in the sheet
+        frame_height = sheet_height
+
+        for i in range(5):
+            frame = self.explosion_sheet.subsurface(pygame.Rect(
+                i * frame_width, 0, frame_width, frame_height))
+            frames.append(frame)
+
+        return frames
+
+
+    def _check_aliens_bottom(self):
+        """Check if any aliens have reached the bottom of the screen."""
+        for alien in self.aliens.sprites():
+            if alien.rect.bottom >= self.settings.screen_height:
+                # Treat this same as if the ship got hit. 
+                self._ship_hit()
+                break
 
 if __name__ == "__main__":
     # Make a game instance, and run the game.
