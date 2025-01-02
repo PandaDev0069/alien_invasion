@@ -50,6 +50,9 @@ class AlienInvasion:
         # Extract explosion frames from the sprite sheet
         self.explosion_frames = self._get_explosion_frames()
 
+        # Load heart image
+        self.heart_image = pygame.image.load('images/heart.bmp')
+
         # Start Alien Invasion in an inactive state.
         self.game_active = False
         self.show_difficulty_buttons = False
@@ -86,6 +89,7 @@ class AlienInvasion:
         """Respond to key presses and mouse events."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self.stats._write_high_score()  # Write high score to file
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
@@ -149,7 +153,7 @@ class AlienInvasion:
             for aliens in collisions.values():
                 self.stats.score += self.settings.alien_points * len(aliens)
             self.sb.prep_score()
-            self.sb.prep_high_score()  # Update high score if necessary
+            self.sb.check_high_score()  # Update high score if necessary
             self._show_explosion(aliens[0])
 
         if not self.aliens:
@@ -157,6 +161,10 @@ class AlienInvasion:
             self.bullets.empty()
             self._create_fleet()
             self.settings.increase_speed()
+
+            # Increase level.
+            self.stats.level += 1
+            self.sb.prep_level()
 
 
     def _show_explosion(self, alien):
@@ -182,6 +190,7 @@ class AlienInvasion:
 
             # Draw the score information.
             self.sb.show_score() 
+            self._show_ships_left()
 
         # Draw the play button if the game is inactive.
         if not self.game_active:
@@ -265,6 +274,7 @@ class AlienInvasion:
         # Decrement ships_left.
         if self.stats.ships_left > 0:
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
 
             # Get rid of any remaining aliens and bullets.
             self.aliens.empty()
@@ -328,6 +338,7 @@ class AlienInvasion:
         if self.show_difficulty_buttons and self.back_button.rect.collidepoint(mouse_pos):
             self.show_difficulty_buttons = False
 
+
     def start_game(self):
         """
         Resets all statistics bullets , aliens ; create new fleet
@@ -337,6 +348,7 @@ class AlienInvasion:
         
         self.stats.reset_stats()
         self.sb.prep_score()
+        self.sb.prep_level()
         self.game_active = True
         self.show_difficulty_buttons = False
 
@@ -350,6 +362,11 @@ class AlienInvasion:
 
         #Reset the game settings.
         self.settings.initialize_dynamic_settings()
+
+    def _show_ships_left(self):
+        """Show how many ships are left."""
+        for ship_number in range(self.stats.ships_left):
+            self.screen.blit(self.heart_image, (10 + ship_number * self.heart_image.get_width(), 10))
 
         
 if __name__ == "__main__":
