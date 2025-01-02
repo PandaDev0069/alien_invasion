@@ -43,6 +43,9 @@ class Settings:
             self.bullet_speed = 7.0
             self.alien_speed = 2.0
 
+        # Scoring settings
+        
+
     def increase_speed(self):
         """Increase speed settings."""
         self.ship_speed *= self.speedup_scale
