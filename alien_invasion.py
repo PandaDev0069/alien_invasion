@@ -13,12 +13,11 @@ from alien import Alien
 from explosion import Explosion
 
 class AlienInvasion:
-    """Overall class to manage game assets and behaviour."""
+    """Overall class to manage game assets and behavior."""
 
     def __init__(self):
         """Initialize the game, and create game resources."""
         pygame.init()
-        self.clock = pygame.time.Clock()
         self.settings = Settings()
 
         self.screen = pygame.display.set_mode((
@@ -53,8 +52,14 @@ class AlienInvasion:
         self.game_active = False
 
         # Make the play button.
-        self.play_button = Button(self, "Play") 
+        self.play_button = Button(self, "Play", self.settings.screen_width // 2 - 100, self.settings.screen_height // 2 - 25)
 
+        # Create difficulty level buttons
+        self.easy_button = Button(self, 'Easy', 100, 100)
+        self.medium_button = Button(self, 'Medium', 100, 200)
+        self.hard_button = Button(self, 'Hard', 100, 300)
+
+        self.clock = pygame.time.Clock()
 
     def run_game(self):
         """Start the main loop for the game."""
@@ -84,6 +89,7 @@ class AlienInvasion:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()
                 self._check_play_button(mouse_pos)
+                self._check_difficulty_buttons(mouse_pos)
 
     def _check_keydown_events(self, event):
         """Respond to key presses."""
@@ -141,6 +147,7 @@ class AlienInvasion:
             # Destroy existing bullets and create new fleet.
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
 
 
     def _show_explosion(self, alien):
@@ -165,6 +172,9 @@ class AlienInvasion:
         # Draw the play button if the game is inactive.
         if not self.game_active:
             self.play_button.draw_button()
+            self.easy_button.draw_button()
+            self.medium_button.draw_button()
+            self.hard_button.draw_button()
 
         for explosion in self.explosions.sprites():
             explosion.draw()
@@ -286,6 +296,18 @@ class AlienInvasion:
         if button_clicked and not self.game_active:
             self.start_game()
 
+    def _check_difficulty_buttons(self, mouse_pos):
+        """Check if a difficulty button is clicked."""
+        if self.easy_button.rect.collidepoint(mouse_pos):
+            self.settings.difficulty = 'easy'
+            self.start_game()
+        elif self.medium_button.rect.collidepoint(mouse_pos):
+            self.settings.difficulty = 'medium'
+            self.start_game()
+        elif self.hard_button.rect.collidepoint(mouse_pos):
+            self.settings.difficulty = 'hard'
+            self.start_game()
+
     def start_game(self):
         """
         Resets all statistics bullets , aliens ; create new fleet
@@ -303,7 +325,11 @@ class AlienInvasion:
         # Create a new fleet and center the ship.
         self._create_fleet()
         self.ship.center_ship()
-    
+
+        #Reset the game settings.
+        self.settings.initialize_dynamic_settings()
+
+        
 if __name__ == "__main__":
     # Make a game instance, and run the game.
     ai = AlienInvasion()
