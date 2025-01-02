@@ -84,7 +84,6 @@ class AlienInvasion:
             self._update_screen()
             self.clock.tick(60)
 
-
     def _check_events(self):
         """Respond to key presses and mouse events."""
         for event in pygame.event.get():
@@ -115,7 +114,6 @@ class AlienInvasion:
         elif event.key == pygame.K_p and not self.game_active:
             self.start_game()
 
-
     def _check_keyup_events(self, event):
         """Respond to key releases."""
         if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
@@ -123,13 +121,11 @@ class AlienInvasion:
         elif event.key == pygame.K_LEFT or event.key == pygame.K_a:
             self.ship.moving_left = False
 
-
     def _fire_bullet(self):
         """Create a new bullet and add it to the bullets group."""
         if len(self.bullets) < self.settings.bullets_allowed:
             new_bullet = Bullet(self)
             self.bullets.add(new_bullet)
-
 
     def _update_bullets(self):
         """Update the position of bullets and get rid of old bullets."""
@@ -142,7 +138,6 @@ class AlienInvasion:
                 self.bullets.remove(bullet)
         
         self._check_bullet_alien_collisions()
-
 
     def _check_bullet_alien_collisions(self):
         """Respond to bullet-alien collisions."""
@@ -166,17 +161,14 @@ class AlienInvasion:
             self.stats.level += 1
             self.sb.prep_level()
 
-
     def _show_explosion(self, alien):
         """Show an explosion at the alien's position."""
         explosion = Explosion(self, alien.rect.center)
         self.explosions.add(explosion)
 
-
     def _update_explosions(self):
         """Update the position of explosions."""
         self.explosions.update()
-
 
     def _update_screen(self):
         """Update images on screen, and flip to the new screen."""
@@ -204,25 +196,20 @@ class AlienInvasion:
 
         pygame.display.flip()
     
-
     def _create_fleet(self):
         """Create the fleet of aliens."""
-        # Create an alien and keep adding aliens until there's no room left.
-        # Spacing between aliens is one alien width and one alien height.
         alien = Alien(self)
         alien_width, alien_height = alien.rect.size
 
-
-        current_x , current_y = alien_width, alien_height
+        current_x, current_y = alien_width, alien_height
         while current_y < (self.settings.screen_height - 8 * alien_height):
-            while current_x < (self.settings.screen_width - 2* alien_width):
+            while current_x < (self.settings.screen_width - 2 * alien_width):
                 self._create_alien(current_x, current_y)
                 current_x += uniform(1, 1.9) * alien_width
-            
-            # Finished a row, reset x value , and increment y value.
+
+            # Finished a row, reset x value, and increment y value.
             current_x = alien_width + uniform(0, 8)
             current_y += uniform(1, 1.9) * alien_width
-
 
     def _create_alien(self, x_position, y_position):
         """Create an alien and place it in the row."""
@@ -231,7 +218,6 @@ class AlienInvasion:
         new_alien.rect.x = x_position
         new_alien.rect.y = y_position
         self.aliens.add(new_alien)
-        
 
     def _update_aliens(self):
         """Check if the fleet is at an edge, then update positions."""
@@ -252,13 +238,11 @@ class AlienInvasion:
                 self._change_fleet_direction()
                 break
     
-    
     def _change_fleet_direction(self):
         """Droop the entire fleet and change the fleet's direction."""
         for alien in self.aliens.sprites():
             alien.rect.y += self.settings.fleet_drop_speed
         self.settings.fleet_direction *= -1
-                    
 
     def _ship_hit(self):
         """Respond to the ship being hit by an alien."""
@@ -304,7 +288,6 @@ class AlienInvasion:
 
         return frames
 
-
     def _check_aliens_bottom(self):
         """Check if any aliens have reached the bottom of the screen."""
         for alien in self.aliens.sprites():
@@ -312,7 +295,6 @@ class AlienInvasion:
                 # Treat this same as if the ship got hit. 
                 self._ship_hit()
                 break
-
 
     def _check_play_button(self, mouse_pos):
         """Start a new game when the player clicks Play."""
@@ -337,7 +319,6 @@ class AlienInvasion:
         """Return to the main screen when the Back button is clicked."""
         if self.show_difficulty_buttons and self.back_button.rect.collidepoint(mouse_pos):
             self.show_difficulty_buttons = False
-
 
     def start_game(self):
         """
@@ -368,7 +349,6 @@ class AlienInvasion:
         for ship_number in range(self.stats.ships_left):
             self.screen.blit(self.heart_image, (10 + ship_number * self.heart_image.get_width(), 10))
 
-        
 if __name__ == "__main__":
     # Make a game instance, and run the game.
     ai = AlienInvasion()
