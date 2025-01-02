@@ -7,7 +7,7 @@ from random import randint, uniform
 from settings import Settings
 from game_stats import GameStats
 from scoreboard import Scoreboard
-from button import Button
+from button import Button   
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
@@ -52,14 +52,18 @@ class AlienInvasion:
 
         # Start Alien Invasion in an inactive state.
         self.game_active = False
+        self.show_difficulty_buttons = False
 
         # Make the play button.
-        self.play_button = Button(self, "Play", self.settings.screen_width // 2 - 100, self.settings.screen_height // 2 - 25)
+        self.play_button = Button(self, "Play", self.settings.screen_width // 2 - 100, self.settings.screen_height // 2 - 75)
 
         # Create difficulty level buttons
-        self.easy_button = Button(self, 'Easy', 100, 100)
-        self.medium_button = Button(self, 'Medium', 100, 200)
-        self.hard_button = Button(self, 'Hard', 100, 300)
+        self.easy_button = Button(self, 'Easy', self.settings.screen_width // 2 - 100, self.settings.screen_height // 2)
+        self.medium_button = Button(self, 'Medium', self.settings.screen_width // 2 - 100, self.settings.screen_height // 2 + 75)
+        self.hard_button = Button(self, 'Hard', self.settings.screen_width // 2 - 100, self.settings.screen_height // 2 + 150)
+
+        # Create back button
+        self.back_button = Button(self, 'Back', 10, 10)
 
         self.clock = pygame.time.Clock()
 
@@ -92,6 +96,7 @@ class AlienInvasion:
                 mouse_pos = pygame.mouse.get_pos()
                 self._check_play_button(mouse_pos)
                 self._check_difficulty_buttons(mouse_pos)
+                self._check_back_button(mouse_pos)
 
     def _check_keydown_events(self, event):
         """Respond to key presses."""
@@ -134,17 +139,19 @@ class AlienInvasion:
         
         self._check_bullet_alien_collisions()
 
+
     def _check_bullet_alien_collisions(self):
-        """Respond to bullet-alien collisons."""
+        """Respond to bullet-alien collisions."""
         # Remove any bullets and aliens that have collided.
-        collisions = pygame.sprite.groupcollide(
-            self.bullets, self.aliens, True, True)
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
 
         if collisions:
             for aliens in collisions.values():
-                for alien in aliens:
-                    self._show_explosion(alien)
-        
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+            self.sb.prep_high_score()  # Update high score if necessary
+            self._show_explosion(aliens[0])
+
         if not self.aliens:
             # Destroy existing bullets and create new fleet.
             self.bullets.empty()
@@ -225,7 +232,7 @@ class AlienInvasion:
         # Look for alien-ship collisions.
         if pygame.sprite.spritecollideany(self.ship, self.aliens):
             self._ship_hit()
-        
+
         # Look for aliens hitting the bottom of the screen.
         self._check_aliens_bottom()
 
@@ -305,15 +312,21 @@ class AlienInvasion:
 
     def _check_difficulty_buttons(self, mouse_pos):
         """Check if a difficulty button is clicked."""
-        if self.easy_button.rect.collidepoint(mouse_pos):
-            self.settings.difficulty = 'easy'
-            self.start_game()
-        elif self.medium_button.rect.collidepoint(mouse_pos):
-            self.settings.difficulty = 'medium'
-            self.start_game()
-        elif self.hard_button.rect.collidepoint(mouse_pos):
-            self.settings.difficulty = 'hard'
-            self.start_game()
+        if not self.game_active:
+            if self.easy_button.rect.collidepoint(mouse_pos):
+                self.settings.difficulty = 'easy'
+                self.start_game()
+            elif self.medium_button.rect.collidepoint(mouse_pos):
+                self.settings.difficulty = 'medium'
+                self.start_game()
+            elif self.hard_button.rect.collidepoint(mouse_pos):
+                self.settings.difficulty = 'hard'
+                self.start_game()
+
+    def _check_back_button(self, mouse_pos):
+        """Return to the main screen when the Back button is clicked."""
+        if self.show_difficulty_buttons and self.back_button.rect.collidepoint(mouse_pos):
+            self.show_difficulty_buttons = False
 
     def start_game(self):
         """
@@ -323,13 +336,15 @@ class AlienInvasion:
         # Reset the game statisitcs.
         
         self.stats.reset_stats()
+        self.sb.prep_score()
         self.game_active = True
+        self.show_difficulty_buttons = False
 
         # Get rid of any remaining bullets and aliens.
         self.bullets.empty()
         self.aliens.empty()
 
-        # Create a new fleet and center the ship.
+        # Create a new fleet and center the ship .
         self._create_fleet()
         self.ship.center_ship()
 
